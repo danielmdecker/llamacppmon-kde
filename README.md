@@ -1,36 +1,93 @@
-# Llama.cpp Monitor (Plasma 6 plasmoid)
+# 🦙 Llama.cpp Monitor
 
-Monitor and manage llama.cpp models served through
-[llama-swap](https://github.com/mostlygeek/llama-swap) from the KDE Plasma panel.
+<div align="center">
+  <img src="https://img.shields.io/badge/KDE-Plasma%206-blue" alt="KDE Plasma 6" />
+  <img src="https://img.shields.io/badge/Status-Active-green" alt="Active Status" />
+  <img src="https://img.shields.io/badge/Requirements-llama--swap-orange" alt="Requirements" />
+</div>
 
-- Round panel icon with a badge showing how many models are currently loaded
-- Popup header with available/total **VRAM** (amdgpu sysfs) and **RAM** (`/proc/meminfo`)
-- List of loaded models with per-model VRAM and RAM footprint and state
-  (loading / ready), each with an unload button that clears it from memory
-- Per-model memory is attributed via the model's llama-server process:
-  VRAM/GTT from DRM fdinfo, RSS from `/proc`
+## ✨ Overview
 
-## Requirements
+Monitor and manage llama.cpp models served through [llama-swap](https://github.com/mostlygeek/llama-swap) directly from your KDE Plasma 6 panel. Get real-time visibility into VRAM and RAM usage with an intuitive round panel icon.
 
-- KDE Plasma 6
-- llama-swap (uses `GET /running` and `POST /api/models/unload/<model>`)
-- `curl`
-- An amdgpu GPU for the VRAM numbers (`/sys/class/drm/card*/device/mem_info_vram_*`);
-  everything else works without one
+## 🎯 Features
 
-## Install
+- **📊 Real-time Monitoring**
+  - Round panel icon with badge showing loaded model count
+  - Popup displays VRAM/total VRAM and RAM/total RAM usage
+  - Per-model memory footprint with loading/ready status
 
-```sh
-./install.sh            # install or upgrade
-./install.sh remove     # uninstall
+- **🧹 Memory Management**
+  - Easy unload buttons for each loaded model
+  - Automatic RAM/VRAM cleanup via process attributes
+  - Granular memory attribution from `llama-server` process
+
+- **⚙️ Customizable**
+  - Configurable server URL (default: `http://127.0.0.1:8090`)
+  - Adjustable refresh intervals for popup and closed states
+  - Works with or without AMD GPU (VRAM still displayed when available)
+
+## 📋 Requirements
+
+- **Desktop Environment**: KDE Plasma 6
+- **Core Dependencies**: llama-swap, curl
+- **Hardware**:
+  - AMD GPU for VRAM metrics (optional - works without one)
+  - Requires `/sys/class/drm/card*/device/mem_info_vram_*` access
+
+## 🚀 Installation
+
+### Quick Install
+
+```bash
+# Install or upgrade
+./install.sh
+
+# Uninstall
+./install.sh remove
 ```
 
-Then add **Llama.cpp Monitor** from the panel's *Add Widgets* menu.
+### Setup
 
-## Configuration
+1. Run the install script
+2. Add **Llama.cpp Monitor** from the panel's *Add Widgets* menu
+3. Configure your llama-swap server URL if needed
 
-Right-click the icon → *Configure…*
+## ⚙️ Configuration
 
-- **Server URL** — llama-swap base URL (default `http://127.0.0.1:8090`)
-- **Refresh interval (popup open)** — default 3 s
-- **Refresh interval (popup closed)** — badge/tooltip polling, default 30 s
+**Right-click the icon → Configure…**
+
+- **Server URL** — llama-swap base URL (default: `http://127.0.0.1:8090`)
+- **Refresh interval (popup open)** — default: 3 seconds
+- **Refresh interval (popup closed)** — badge/tooltip polling, default: 30 seconds
+
+## 🔧 Development
+
+```bash
+# Clone repository
+git clone <repository-url>
+
+# Install development dependencies
+./install.sh dev
+
+# Run tests
+./run-tests.sh
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📧 Contact
+
+For questions or issues, please open an issue on the repository.
+
+---
+
+<div align="center">
+  Made with ❤️ for the KDE community
+</div>
