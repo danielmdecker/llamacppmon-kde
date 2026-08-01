@@ -1,40 +1,16 @@
 # 🦙 Llama.cpp Monitor
 
-<div align="center">
-
-![KDE Plasma 6](https://img.shields.io/badge/KDE-Plasma%206-blue)  
-
-![Version](https://img.shields.io/badge/Version-1.0.0-green)  
-
-![Status](https://img.shields.io/badge/Status-Active-success)  
-
-![Requirements](https://img.shields.io/badge/Requirements-llama--swap-orange)  
-
-![License](https://img.shields.io/badge/License-MIT-yellow)  
-
-![Downloads](https://img.shields.io/badge/Downloads-1K-blue)  
-
-![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey)  
-
-![Build](https://img.shields.io/badge/Build-Ready-success)  
-
-![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen)  
-
-</div>
+![KDE Plasma 6](https://img.shields.io/badge/KDE-Plasma%206-blue) ![Version](https://img.shields.io/badge/Version-1.0.0-green)![Status](https://img.shields.io/badge/Status-Active-success) ![Requirements](https://img.shields.io/badge/Requirements-llama--swap-orange) ![License](https://img.shields.io/badge/License-MIT-yellow) ![Downloads](https://img.shields.io/badge/Downloads-1K-blue) ![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey) ![Build](https://img.shields.io/badge/Build-Ready-success) ![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen)  
 
 ## ✨ Overview
 
 Monitor and manage llama.cpp models served through [llama-swap](https://github.com/mostlygeek/llama-swap) directly from your KDE Plasma 6 panel. Get real-time visibility into VRAM and RAM usage with an intuitive round panel icon.
-
-<div align="center">
 
 ![Main Widget View](./screenshots/main-widget-view.png)  
 ***Popup with detailed memory usage and model unload button***
 
 ![Configure Widget View](./screenshots/configure-widget-view.png)  
 ***Widget configuration***
-
-</div>
 
 ## 🎯 Features
 
@@ -287,8 +263,7 @@ Please be respectful and constructive in all interactions.
 
 ---
 
-<div align="center">
-  Made with ❤️ for the KDE community
+Made with ❤️ for the KDE community
   
-  [⬆ Back to Top](#llamacpp-monitor)
-</div>
+[⬆ Back to Top](#llamacpp-monitor)
+
