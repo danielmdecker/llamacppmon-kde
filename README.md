@@ -1,15 +1,15 @@
 # 🦙 Llama.cpp Monitor
 
 <div align="center">
-  ![KDE Plasma 6](https://img.shields.io/badge/KDE-Plasma%206-blue)
-  ![Version](https://img.shields.io/badge/Version-1.0.0-green)
-  ![Status](https://img.shields.io/badge/Status-Active-success)
-  ![Requirements](https://img.shields.io/badge/Requirements-llama--swap-orange)
-  ![License](https://img.shields.io/badge/License-MIT-yellow)
-  ![Downloads](https://img.shields.io/badge/Downloads-1K-blue)
-  ![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey)
-  ![Build](https://img.shields.io/badge/Build-Ready-success)
-  ![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen)
+  ![KDE Plasma 6](https://img.shields.io/badge/KDE-Plasma%206-blue)  
+  ![Version](https://img.shields.io/badge/Version-1.0.0-green)  
+  ![Status](https://img.shields.io/badge/Status-Active-success)  
+  ![Requirements](https://img.shields.io/badge/Requirements-llama--swap-orange)  
+  ![License](https://img.shields.io/badge/License-MIT-yellow)  
+  ![Downloads](https://img.shields.io/badge/Downloads-1K-blue)  
+  ![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey)  
+  ![Build](https://img.shields.io/badge/Build-Ready-success)  
+  ![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen)  
 </div>
 
 ## ✨ Overview
@@ -18,11 +18,11 @@ Monitor and manage llama.cpp models served through [llama-swap](https://github.c
 
 <div align="center">
 
-![Main Widget View](./screenshots/main-widget-view.png)
-*Main panel icon showing model monitoring*
+![Main Widget View](./screenshots/main-widget-view.png)  
+***Popup with detailed memory usage and model unload button***
 
-![Configure Widget View](./screenshots/configure-widget-view.png)
-*Popup with detailed memory usage and model unload button*
+![Configure Widget View](./screenshots/configure-widget-view.png)  
+***Widget configuration***
 
 </div>
 
