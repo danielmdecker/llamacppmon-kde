@@ -12,7 +12,8 @@ Item {
     // Roles provided by the ListModel in main.qml.
     required property string name
     required property string modelState
-    required property int port
+    required property int pid
+    required property bool external     // llama-server not managed by llama-swap
     required property double vramKb
     required property double ramKb
     required property bool memKnown
@@ -58,17 +59,23 @@ Item {
                 font: Kirigami.Theme.smallFont
                 text: delegate.starting ? i18n("Loading…")
                     : delegate.stopping ? i18n("Unloading…")
+                    : delegate.memKnown && delegate.external ? i18n("External · VRAM %1 · RAM %2",
+                                               delegate.backend.formatKb(delegate.vramKb),
+                                               delegate.backend.formatKb(delegate.ramKb))
                     : delegate.memKnown ? i18n("VRAM %1 · RAM %2",
                                                delegate.backend.formatKb(delegate.vramKb),
                                                delegate.backend.formatKb(delegate.ramKb))
+                    : delegate.external ? i18n("External")
                     : delegate.modelState
             }
         }
 
         // unload action (icon rendered as a recolorable mask, so the semantic
-        // tint applies consistently regardless of the icon theme)
+        // tint applies consistently regardless of the icon theme); llama-swap
+        // cannot unload external servers
         PlasmaComponents.ToolButton {
             id: unloadButton
+            visible: !delegate.external
             display: QQC2.AbstractButton.IconOnly
             enabled: !delegate.stopping
             onClicked: delegate.backend.unloadModel(delegate.name)

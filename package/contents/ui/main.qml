@@ -10,18 +10,19 @@ PlasmoidItem {
 
     // ---- state ----
     property var runningModels: []          // last parsed /running result (JS array)
+    property var serverProcs: []            // llama-server processes found on the host (JS array)
     property string errorText: ""           // non-empty when the server is unreachable
     property double ramTotalKb: 0           // /proc/meminfo, KiB
     property double ramAvailKb: 0
     property double vramTotalKb: 0          // amdgpu sysfs, KiB (0 = unknown)
     property double vramUsedKb: 0
 
-    // Per-port process memory cache so list entries keep their numbers between
-    // the model refresh and the (slower) per-process memory refresh.
+    // Per-PID process memory cache so list entries keep their numbers while the
+    // popup is closed (memory is only read while it is open).
     property var memCache: ({})
 
     readonly property double vramAvailKb: Math.max(0, vramTotalKb - vramUsedKb)
-    readonly property int loadedCount: runningModels.length
+    readonly property int loadedCount: modelListModel.count
 
     // Expose the view model to the full representation.
     property alias listModel: modelListModel
@@ -101,6 +102,7 @@ PlasmoidItem {
     // ---- data refresh ----
     function refresh() {
         refreshModels()
+        refreshProcesses()
         refreshMemory()
     }
 
@@ -126,7 +128,7 @@ PlasmoidItem {
                 for (var i = 0; i < arr.length; i++) {
                     var entry = arr[i]
                     // The per-model llama-server port, from the proxy URL; used to
-                    // attribute process memory to the model.
+                    // match the model to its llama-server process.
                     var port = 0
                     var m = /:(\d+)\/?$/.exec(entry.proxy || "")
                     if (m) {
@@ -140,9 +142,6 @@ PlasmoidItem {
                 }
                 root.runningModels = list
                 syncListModel()
-                if (root.expanded) {
-                    fetchModelMemory()
-                }
             })
     }
 
@@ -175,65 +174,133 @@ PlasmoidItem {
             })
     }
 
-    // Per-model memory: find each model's llama-server by its port, then read VRAM
-    // and GTT from DRM fdinfo (deduplicated by drm-client-id) and RSS from /proc.
-    function fetchModelMemory() {
-        var script = ""
-        for (var i = 0; i < runningModels.length; i++) {
-            var port = runningModels[i].port
-            if (port <= 0) {
-                continue
-            }
-            script += "p=" + port + "; "
-                + "pid=$(pgrep -f -- \"llama-serve[r] .*--port $p( |$)\" | head -1); "
-                + "if [ -n \"$pid\" ]; then "
-                + "m=$(awk '/^drm-client-id/{id=$2} /^drm-memory-vram/{v[id]=$2} /^drm-memory-gtt/{g[id]=$2} "
+    // Find every llama-server process on the host (including ones inside containers)
+    // by process name. For each, report whether llama-swap is an ancestor and its
+    // command line. While the popup is open, also read VRAM and GTT from DRM fdinfo
+    // (deduplicated by drm-client-id) and RSS from /proc.
+    function refreshProcesses() {
+        var withMem = root.expanded
+        var script = "for pid in $(pgrep -x llama-server); do "
+            + "s=0; p=$pid; "
+            + "while [ \"$p\" -gt 1 ] 2>/dev/null; do "
+            + "p=$(awk '/^PPid/{print $2}' /proc/$p/status 2>/dev/null); "
+            + "[ \"$(cat /proc/$p/comm 2>/dev/null)\" = llama-swap ] && { s=1; break; }; "
+            + "done; "
+            + "m='- -'; r=-; "
+        if (withMem) {
+            script += "m=$(awk '/^drm-client-id/{id=$2} /^drm-memory-vram/{v[id]=$2} /^drm-memory-gtt/{g[id]=$2} "
                 + "END{tv=0;tg=0;for(i in v)tv+=v[i];for(i in g)tg+=g[i];printf \"%d %d\", tv, tg}' "
                 + "/proc/$pid/fdinfo/* 2>/dev/null); "
                 + "r=$(awk '/^VmRSS/{print $2}' /proc/$pid/status 2>/dev/null); "
-                + "echo \"$p ${m:-0 0} ${r:-0}\"; fi; "
         }
-        if (script.length === 0) {
-            return
-        }
+        script += "echo \"P $pid $s ${m:-0 0} ${r:-0}\"; "
+            + "echo \"C $(tr '\\0\\n' '\\t ' < /proc/$pid/cmdline 2>/dev/null)\"; "
+            + "done"
         executable.run(script, function (stdout) {
-            var changed = false
+            var procs = []
+            var cur = null
             var lines = stdout.split("\n")
             for (var i = 0; i < lines.length; i++) {
-                var parts = lines[i].trim().split(/\s+/)
-                if (parts.length !== 4) {
-                    continue
+                var line = lines[i]
+                if (line.indexOf("P ") === 0) {
+                    var parts = line.trim().split(/\s+/)
+                    if (parts.length !== 6) {
+                        cur = null
+                        continue
+                    }
+                    cur = { pid: parseInt(parts[1], 10), swap: parts[2] === "1" }
+                    if (parts[3] !== "-") {
+                        root.memCache[cur.pid] = {
+                            vram: parseInt(parts[3], 10),
+                            gtt: parseInt(parts[4], 10),
+                            rss: parseInt(parts[5], 10)
+                        }
+                    }
+                } else if (line.indexOf("C ") === 0 && cur) {
+                    var args = parseServerArgs(line.substring(2).split("\t"))
+                    cur.port = args.port
+                    cur.name = args.name
+                    procs.push(cur)
+                    cur = null
                 }
-                root.memCache[parts[0]] = {
-                    vram: parseInt(parts[1], 10),
-                    gtt: parseInt(parts[2], 10),
-                    rss: parseInt(parts[3], 10)
+            }
+            // Drop cached memory for processes that have exited.
+            var live = {}
+            for (var j = 0; j < procs.length; j++) {
+                live[procs[j].pid] = true
+            }
+            for (var pid in root.memCache) {
+                if (!live[pid]) {
+                    delete root.memCache[pid]
                 }
-                changed = true
             }
-            if (changed) {
-                syncListModel()
-            }
+            root.serverProcs = procs
+            syncListModel()
         })
     }
 
-    // Rebuild the ListModel from runningModels, applying cached per-process memory.
+    // Port and display name from a llama-server argv: --alias (first of a comma list),
+    // else the --model file name, else the --hf-repo, else "llama-server".
+    function parseServerArgs(argv) {
+        var opts = {}
+        for (var i = 1; i < argv.length; i++) {
+            var a = argv[i]
+            var eq = a.indexOf("=")
+            if (a.indexOf("-") === 0 && eq > 0) {
+                opts[a.substring(0, eq)] = a.substring(eq + 1)
+            } else if (a.indexOf("-") === 0 && i + 1 < argv.length) {
+                opts[a] = argv[i + 1]
+            }
+        }
+        var alias = opts["--alias"] || opts["-a"]
+        var model = opts["--model"] || opts["-m"]
+        var hf = opts["--hf-repo"] || opts["-hf"] || opts["-hfr"]
+        var name = alias ? alias.split(",")[0]
+                 : model ? model.replace(/^.*\//, "").replace(/\.gguf$/i, "")
+                 : hf ? hf
+                 : "llama-server"
+        return {
+            port: parseInt(opts["--port"] || "8080", 10),
+            name: name
+        }
+    }
+
+    // Rebuild the ListModel. llama-swap models are matched to the llama-server
+    // process that llama-swap spawned on their port. llama-server processes not
+    // started by llama-swap (e.g. in a container) are listed as external.
     // A model's host-RAM footprint is GTT (GPU-visible host memory, where CPU-offloaded
     // weights live under Vulkan) plus the process RSS.
     function syncListModel() {
         modelListModel.clear()
         for (var i = 0; i < runningModels.length; i++) {
             var m = runningModels[i]
-            var mem = memCache[m.port]
-            modelListModel.append({
-                name: m.name,
-                modelState: m.modelState,
-                port: m.port,
-                vramKb: mem ? mem.vram : 0,
-                ramKb: mem ? (mem.gtt + mem.rss) : 0,
-                memKnown: mem !== undefined
-            })
+            var pid = 0
+            for (var j = 0; j < serverProcs.length; j++) {
+                if (serverProcs[j].swap && serverProcs[j].port === m.port) {
+                    pid = serverProcs[j].pid
+                    break
+                }
+            }
+            appendRow(m.name, m.modelState, pid, false)
         }
+        for (var k = 0; k < serverProcs.length; k++) {
+            if (!serverProcs[k].swap) {
+                appendRow(serverProcs[k].name, "ready", serverProcs[k].pid, true)
+            }
+        }
+    }
+
+    function appendRow(name, modelState, pid, external) {
+        var mem = pid > 0 ? memCache[pid] : undefined
+        modelListModel.append({
+            name: name,
+            modelState: modelState,
+            pid: pid,
+            external: external,
+            vramKb: mem ? mem.vram : 0,
+            ramKb: mem ? (mem.gtt + mem.rss) : 0,
+            memKnown: mem !== undefined
+        })
     }
 
     // ---- actions ----
