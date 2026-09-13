@@ -18,12 +18,13 @@ Monitor and manage llama.cpp models served through [llama-swap](https://github.c
 - **Round Panel Icon** with badge showing loaded model count
 - **Popup Display** shows VRAM/total VRAM and RAM/total RAM usage
 - **Per-model Memory Footprint** with loading/ready status
+- **External Server Detection** lists `llama-server` processes not started by llama-swap (e.g. inside a container) as *External*, named from `--alias`, `--model`, or `--hf-repo`
 - **Live Updates** with configurable refresh intervals
 
 ### 🧹 Memory Management
-- **Easy Unload Buttons** for each loaded model
+- **Easy Unload Buttons** for each llama-swap model (hidden for external servers, which llama-swap cannot unload)
 - **Automatic RAM/VRAM Cleanup** via process attributes
-- **Granular Memory Attribution** from `llama-server` process
+- **Granular Memory Attribution** per `llama-server` PID, matched to llama-swap models by port
 
 ### ⚙️ Customization
 - **Server URL Configuration** (default: `http://127.0.0.1:8090`)
@@ -34,7 +35,7 @@ Monitor and manage llama.cpp models served through [llama-swap](https://github.c
 
 ### Minimum Requirements
 - **Desktop Environment**: KDE Plasma 6
-- **Core Dependencies**: llama-swap, curl
+- **Core Dependencies**: llama-swap, curl, `pgrep` (procps)
 - **Hardware**:
   - AMD GPU for VRAM metrics (optional - works without one)
   - Requires `/sys/class/drm/card*/device/mem_info_vram_*` access
@@ -114,6 +115,11 @@ cd llamacppmon-kde
 - **Too many models loaded**: Consider using smaller models or unloading unused ones
 - **Refresh interval too fast**: Increase the refresh interval in settings
 - **Process cleanup**: Monitor memory cleanup in llama-swap logs
+
+#### 🟣 External Server Missing or Memory Not Shown
+- **Process name**: Detection matches the exact process name `llama-server`: `pgrep -x llama-server`
+- **Memory only while open**: Per-process VRAM/RAM is read only while the popup is open
+- **Permissions**: Memory for processes owned by another user (e.g. a container running as root) requires read access to `/proc/<pid>/fdinfo` and `/proc/<pid>/status`
 
 #### 🔵 Popup Not Updating
 - **Network connectivity**: Verify server URL is reachable
